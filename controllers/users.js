@@ -77,9 +77,9 @@ module.exports.login = (req, res) => {
 module.exports.changeUserInfo = (req, res) => {
   const { name, about } = req.body;
 
-  User.findByIdAndUpdate(req.user._id, { name, about }, { runValidators: true })
+  User.findByIdAndUpdate(req.user._id, { name, about }, { runValidators: true, new: true })
     .orFail(() => new Error('NotFound'))
-    .then(() => res.send({ message: 'Профиль пользователя обновлен' }))
+    .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         res.status(400).send({ message: err.message });
@@ -96,9 +96,9 @@ module.exports.changeUserInfo = (req, res) => {
 module.exports.changeUserAvatar = (req, res) => {
   const { avatar } = req.body;
 
-  User.findByIdAndUpdate(req.user._id, { avatar }, { runValidators: true })
+  User.findByIdAndUpdate(req.user._id, { avatar }, { runValidators: true, new: true })
     .orFail(() => new Error('NotFound'))
-    .then(() => res.send({ message: 'Аватар обновлен' }))
+    .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         res.status(400).send({ message: err.message });
