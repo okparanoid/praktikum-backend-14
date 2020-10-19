@@ -2,13 +2,7 @@ const Card = require('../models/card');
 
 module.exports.getCards = (req, res) => {
   Card.find({})
-    .then((cards) => {
-      if (!cards.length) {
-        res.status(200).send({ data: [] });
-        return;
-      }
-      res.send(cards);
-    })
+    .then((cards) => res.status(200).send(cards))
     .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
 };
 
@@ -41,7 +35,7 @@ module.exports.deleteCard = (req, res) => {
       if (err.message === 'NotFound') {
         res.status(404).send({ message: 'Нет карточки с таким id' });
       } else if (err.message === 'NoRights') {
-        res.status(403).send({ message: 'Нет прав' });
+        res.status(403).send({ message: 'Отсутствуют права на удаление для этой карточки' });
       } else if (err.name === 'CastError') {
         res.status(400).send({ message: 'Невалидный id' });
       } else {
@@ -55,7 +49,7 @@ module.exports.likeCard = (req, res) => {
     { $addToSet: { likes: req.user._id } },
     { new: true })
     .orFail(() => new Error('NotFound'))
-    .then(() => res.send({ message: 'лайк' }))
+    .then((card) => res.send(card))
     .catch((err) => {
       if (err.message === 'NotFound') {
         res.status(404).send({ message: 'Нет карточки с таким id' });
@@ -72,7 +66,7 @@ module.exports.dislikeCard = (req, res) => {
     { $pull: { likes: req.user._id } },
     { new: true })
     .orFail(() => new Error('NotFound'))
-    .then(() => res.send({ message: 'дизлайк' }))
+    .then((card) => res.send(card))
     .catch((err) => {
       if (err.message === 'NotFound') {
         res.status(404).send({ message: 'Нет карточки с таким id' });

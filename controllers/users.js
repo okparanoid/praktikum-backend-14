@@ -4,13 +4,7 @@ const User = require('../models/user');
 
 module.exports.getUsers = (req, res) => {
   User.find({})
-    .then((users) => {
-      if (!users.length) {
-        res.status(200).send({ data: [] });
-        return;
-      }
-      res.send(users);
-    })
+    .then((users) => res.status(200).send(users))
     .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
 };
 
@@ -30,30 +24,34 @@ module.exports.getUser = (req, res) => {
 };
 
 module.exports.createUser = (req, res) => {
-  bcrypt.hash(req.body.password, 10)
-    .then((hash) => User.create({
-      name: req.body.name,
-      about: req.body.about,
-      avatar: req.body.avatar,
-      email: req.body.email,
-      password: hash,
-    }))
-    .then((user) => res.status(201).send({
-      _id: user._id,
-      name: user.name,
-      about: user.about,
-      avatar: user.avatar,
-      email: user.email,
-    }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(400).send({ message: err.message });
-      } else if (err.name === 'MongoError') {
-        res.status(400).send({ message: 'Введите другую почту' });
-      } else {
-        res.status(500).send({ message: 'На сервере произошла ошибка' });
-      }
-    });
+  if (!req.body.password || req.body.password.length < 8) {
+    res.status(400).send({ message: 'Пароль должен быть не менее 8 символов' });
+  } else {
+    bcrypt.hash(req.body.password, 10)
+      .then((hash) => User.create({
+        name: req.body.name,
+        about: req.body.about,
+        avatar: req.body.avatar,
+        email: req.body.email,
+        password: hash,
+      }))
+      .then((user) => res.status(201).send({
+        _id: user._id,
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+        email: user.email,
+      }))
+      .catch((err) => {
+        if (err.name === 'ValidationError') {
+          res.status(400).send({ message: err.message });
+        } else if (err.name === 'MongoError' && err.code === 11000) {
+          res.status(409).send({ message: 'Введите другую почту' });
+        } else {
+          res.status(500).send({ message: 'На сервере произошла ошибка' });
+        }
+      });
+  }
 };
 
 module.exports.login = (req, res) => {
@@ -88,7 +86,7 @@ module.exports.changeUserInfo = (req, res) => {
       } else if (err.message === 'NotFound') {
         res.status(404).send({ message: 'Нет пользователя с таким id' });
       } else if (err.name === 'CastError') {
-        res.status(404).send({ message: 'Невалидный id' });
+        res.status(400).send({ message: 'Невалидный id' });
       } else {
         res.status(500).send({ message: 'На сервере произошла ошибка' });
       }
